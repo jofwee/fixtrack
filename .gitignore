@@ -1,0 +1,15 @@
+# Original supplied prototype stays local; the rebuild is in fixtrack/.
+/repairflow/
+node_modules/
+dist/
+.env*
+!.env.example
+!.env.local.example
+*.tsbuildinfo
+.sites-runtime/
+test-results/
+playwright-report/
+qa/
+.DS_Store
+Thumbs.db
+*.log
