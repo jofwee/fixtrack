@@ -1,6 +1,6 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { readFile } from 'node:fs/promises';
+import { readFile, readdir } from 'node:fs/promises';
 import { PGlite } from '@electric-sql/pglite';
 
 test('PostgreSQL migration, RLS, transactional workflow and private tracking', async t => {
@@ -18,8 +18,11 @@ test('PostgreSQL migration, RLS, transactional workflow and private tracking', a
     create function extensions.gen_random_bytes(n integer) returns bytea language sql volatile as $$ select substring(sha256(convert_to(gen_random_uuid()::text,'UTF8')) from 1 for n) $$;
     create function extensions.digest(value text, algorithm text) returns bytea language sql immutable as $$ select sha256(convert_to(value,'UTF8')) $$;
   `);
-  const migration = (await readFile(new URL('../supabase/migrations/202611240001_fixtrack.sql', import.meta.url), 'utf8')).replace('create extension if not exists pgcrypto with schema extensions;', '');
-  await db.exec(migration);
+  const directory = new URL('../supabase/migrations/', import.meta.url);
+  for (const file of (await readdir(directory)).filter(name => name.endsWith('.sql')).sort()) {
+    const migration = (await readFile(new URL(file, directory), 'utf8')).replace('create extension if not exists pgcrypto with schema extensions;', '');
+    await db.exec(migration);
+  }
   const ownerA = '11111111-1111-4111-8111-111111111111', ownerB = '22222222-2222-4222-8222-222222222222', staffA = '33333333-3333-4333-8333-333333333333';
   await db.query('insert into auth.users(id) values ($1),($2),($3)', [ownerA, ownerB, staffA]);
   const query = async (sql: string, params: unknown[] = []) => (await db.query<Record<string, unknown>>(sql, params)).rows;
@@ -98,10 +101,18 @@ test('PostgreSQL migration, RLS, transactional workflow and private tracking', a
   await t.test('collection ends the workflow and keeps records read-only', async () => {
     await query("select public.change_repair($1,4,'advance')", [created.id]);
     await query("select public.change_repair($1,5,'advance')", [created.id]);
-    await query("select public.change_repair($1,6,'advance')", [created.id]);
+    await query("select public.change_repair($1,6,'advance','{\"collection_verified\":true}')", [created.id]);
     const repair = (await query('select stage, ready_at, claimed_at, ever_delayed from public.repairs'))[0];
     assert.equal(repair.stage, 'Claimed'); assert.ok(repair.ready_at); assert.ok(repair.claimed_at); assert.equal(repair.ever_delayed, true);
     await assert.rejects(query("select public.change_repair($1,7,'note',$2::jsonb)", [created.id, JSON.stringify({ text: 'Late edit', visible: true })]), /read-only/);
+  });
+  await t.test('jobs without an estimate can become ready, and collection requires explicit verification', async () => {
+    const issued = (await query('select public.create_repair($1,$2::jsonb) as result', [a, JSON.stringify({ ...input, request_id: crypto.randomUUID(), original_due: '' })]))[0].result as typeof created;
+    for (const version of [1, 2, 3]) await query("select public.change_repair($1,$2,'advance')", [issued.id, version]);
+    const row = (await query('select stage,ever_delayed from public.repairs where id=$1', [issued.id]))[0];
+    assert.equal(row.stage, 'Ready for Pickup'); assert.equal(row.ever_delayed, false);
+    await assert.rejects(query("select public.change_repair($1,4,'advance')", [issued.id]), /recipient was verified/);
+    await query("select public.change_repair($1,4,'advance','{\"collection_verified\":true}')", [issued.id]);
   });
   await db.close();
 });

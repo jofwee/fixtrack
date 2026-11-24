@@ -1,12 +1,12 @@
-import { createClient } from 'npm:@supabase/supabase-js@2.119.2';
-import { body, preflight, reply, serverClient } from '../_shared/http.ts';
+import { body, preflight, reply, serverClient, userClient } from '../_shared/http.ts';
+import { appOrigin } from '../_shared/config.ts';
 Deno.serve(async req => {
   const early = preflight(req); if (early) return early;
   try {
     const authorization = req.headers.get('authorization') || '';
     if (!authorization.startsWith('Bearer ')) return reply(req, { error: 'Sign in first.' }, 401);
     const db = serverClient();
-    const caller = createClient(Deno.env.get('SUPABASE_URL')!, Deno.env.get('SUPABASE_ANON_KEY')!, { global: { headers: { Authorization: authorization } }, auth: { persistSession: false } });
+    const caller = userClient(authorization);
     const { data: { user }, error: authError } = await caller.auth.getUser();
     if (authError || !user) return reply(req, { error: 'Sign in first.' }, 401);
     const input = await body(req);
@@ -17,11 +17,13 @@ Deno.serve(async req => {
     if (!shop || member?.role !== 'owner' || !member.active) return reply(req, { error: 'Owner access required.' }, 403);
     const { data: allowed, error: limitError } = await db.rpc('consume_request_limit', { p_bucket: `invite:${user.id}`, p_limit: 10, p_window_seconds: 3600 });
     if (limitError || !allowed) return reply(req, { error: 'Invitation limit reached. Try again later.' }, 429);
-    const appUrl = Deno.env.get('APP_URL') || 'http://127.0.0.1:5173';
+    const appUrl = appOrigin(name => Deno.env.get(name));
     const { data, error } = await db.auth.admin.inviteUserByEmail(input.email.trim().toLowerCase(), { redirectTo: `${appUrl}/auth/reset` });
     if (error || !data.user) return reply(req, { error: 'Unable to invite this address. It may already have an account.' }, 400);
     const { error: membershipError } = await db.rpc('record_staff_invite', { p_actor: user.id, p_shop_id: input.shop_id, p_user_id: data.user.id, p_name: input.name.trim() });
-    if (membershipError) { await db.auth.admin.deleteUser(data.user.id); return reply(req, { error: 'Unable to finish the invitation. Please try again.' }, 400); }
+    // An invite can refer to an existing, unconfirmed Auth identity. Never delete
+    // that identity on assignment failure; without membership it has no shop access.
+    if (membershipError) return reply(req, { error: 'Invitation could not be assigned. Ask the project administrator to check the account before trying again.' }, 400);
     return reply(req, { success: true });
   } catch { return reply(req, { error: 'Unable to process invitation.' }, 400); }
 });

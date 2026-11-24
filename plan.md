@@ -1,6 +1,6 @@
 # FixTrack website rebuild plan
 
-Prepared for review on November 24, 2026. Implementation has started in `fixtrack/` following your later choices: **Vite + React + Supabase, local development, and a green theme**. The first app build and sample-data workflow are implemented; the Supabase schema and functions are included. Actual Supabase integration remains blocked by missing Docker Desktop. See `fixtrack/README.md` for setup, verification, and remaining release gates.
+Prepared for review on November 24, 2026. Implementation is in `fixtrack/`, using **Vite + React + Supabase and a green theme**. Your latest direction is **Vercel preview + Supabase Cloud**, superseding the supplied final brief's localhost/LAN-only setup. The cloud path does not require Docker. Deployment configuration, cloud setup scripts, defense-account provisioning, and live verification are prepared; applying them to the actual project awaits the remaining `.env.local` values and Vercel domain. See `fixtrack/CLOUD_SETUP.md` for the current setup path.
 
 ## 1. What this website is for
 

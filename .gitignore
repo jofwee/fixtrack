@@ -13,3 +13,4 @@ qa/
 .DS_Store
 Thumbs.db
 *.log
+*.local.txt

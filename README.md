@@ -18,7 +18,11 @@ Open **http://127.0.0.1:5173**.
 
 Without Supabase configured, the app uses clearly labeled fictional data saved in your browser. Each browser has its own records. Do not use preview mode for real customer information.
 
-## Enable accounts and shared records
+## Supabase Cloud and Vercel preview
+
+Use [the cloud setup guide](fixtrack/CLOUD_SETUP.md). In Vercel, set the root directory to `fixtrack` and add only the Supabase project URL and publishable key. Database migration, Edge Functions, Auth redirects, and defense accounts are configured separately on Supabase.
+
+## Optional local Supabase development
 
 The Supabase schema, access policies, and Edge Functions are included. Local Supabase requires Docker Desktop. See the [full setup guide](fixtrack/README.md) for database setup, owner provisioning, invitations, MFA, and verification limits.
 
@@ -31,7 +35,7 @@ cd fixtrack
 npm test
 npm run check:functions
 npm run build
-# With the Vite server running and Chrome installed:
+# With Chrome installed (test servers start automatically):
 npm run test:browser
 ```
 

@@ -5,6 +5,7 @@
   "type": "module",
   "scripts": {
     "dev": "vite --host 127.0.0.1",
+    "prebuild": "node --experimental-strip-types scripts/check-public-env.mjs",
     "build": "tsc -b && vite build",
     "preview": "vite preview --host 127.0.0.1",
     "test": "node --experimental-strip-types --test tests/*.test.ts",
@@ -14,7 +15,10 @@
     "db:reset": "supabase db reset",
     "db:migrate": "supabase migration up --local",
     "functions:serve": "supabase functions serve --env-file supabase/.env.local",
-    "setup:owner": "node --env-file=.env.local scripts/create-owner.mjs"
+    "setup:owner": "node --env-file=.env.local scripts/create-owner.mjs",
+    "setup:cloud": "node --env-file=.env.local scripts/setup-cloud.mjs",
+    "setup:defense": "node --env-file=.env.local scripts/create-defense-accounts.mjs",
+    "check:cloud": "node --env-file=.env.local scripts/check-cloud.mjs"
   },
   "dependencies": {
     "@supabase/supabase-js": "^2.90.0",

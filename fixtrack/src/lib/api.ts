@@ -2,13 +2,16 @@ import { createClient } from '@supabase/supabase-js';
 import { DEMO_SHOP, seedCustomers, seedRepairs } from './seed';
 import { nextStage, normalizeCode, shopDay, validateIntake } from './domain';
 import type { Customer, Intake, Profile, Repair, Shop, TrackingResult } from './domain';
-const url = import.meta.env.VITE_SUPABASE_URL;
-const key = import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY;
-export const supabase = url && key ? createClient(url, key, { auth: { storage: window.sessionStorage, persistSession: true, autoRefreshToken: true, detectSessionInUrl: true } }) : null;
-export const preview = !supabase;
+import { browserConfig } from './config';
+const config = browserConfig(import.meta.env.VITE_SUPABASE_URL, import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY, import.meta.env.DEV);
+const { url, key } = config;
+export const configurationError = config.error;
+export const supabase = config.mode === 'connected' ? createClient(url, key, { auth: { storage: window.sessionStorage, persistSession: true, autoRefreshToken: true, detectSessionInUrl: true } }) : null;
+export const preview = config.mode === 'preview';
 const STORAGE_KEY = 'fixtrack-preview-v1';
 interface PreviewData { repairs: Repair[]; customers: Customer[]; shop: Shop; codes: Record<string, string> }
 function localData(): PreviewData {
+  if (!preview) throw new Error(configurationError || 'Supabase is unavailable.');
   try { const saved = localStorage.getItem(STORAGE_KEY); if (saved) { const data = JSON.parse(saved); if (Array.isArray(data.repairs) && Array.isArray(data.customers)) return data; } } catch { /* Reset malformed preview data. */ }
   const repairs = seedRepairs();
   return { repairs, customers: seedCustomers(repairs), shop: DEMO_SHOP, codes: Object.fromEntries(repairs.map(r => [r.reference, 'GREEN2026'])) };
@@ -16,7 +19,7 @@ function localData(): PreviewData {
 function save(data: PreviewData) { localStorage.setItem(STORAGE_KEY, JSON.stringify(data)); }
 function check<T>(result: { data: T | null; error: { message: string } | null }): T { if (result.error) throw new Error(result.error.message); return result.data as T; }
 export async function profile(): Promise<Profile | null> {
-  if (!supabase) return { userId: 'preview-user', shopId: DEMO_SHOP.id, name: 'Alex Rivera', email: 'alex@example.test', role: 'owner' };
+  if (!supabase) { if (!preview) throw new Error(configurationError || 'Supabase is unavailable.'); return { userId: 'preview-user', shopId: DEMO_SHOP.id, name: 'Alex Rivera', email: 'alex@example.test', role: 'owner' }; }
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) return null;
   const member = check(await supabase.from('memberships').select('shop_id, role, display_name').eq('user_id', user.id).eq('active', true).maybeSingle()) as { shop_id: string; role: 'owner' | 'staff'; display_name: string } | null;
@@ -49,8 +52,9 @@ export async function changeRepair(repair: Repair, action: string, payload: Reco
   if (supabase) { check(await supabase.rpc('change_repair', { p_id: repair.id, p_version: repair.version, p_action: action, p_payload: payload })); return; }
   const data = localData(); const row = data.repairs.find(r => r.id === repair.id);
   if (!row || row.version !== repair.version) throw new Error('This repair has changed. Refresh and try again.');
+  if (row.stage === 'Claimed') throw new Error('Collected repairs are read-only.');
   const now = new Date().toISOString(); let title = ''; let detail = ''; let visible = true;
-  if (action === 'advance') { const next = nextStage(row.stage); if (!next) throw new Error('This repair has already been collected.'); row.stage = next; title = next; if (next === 'Ready for Pickup') row.ready_at = now; if (next === 'Claimed') row.claimed_at = now; }
+  if (action === 'advance') { const next = nextStage(row.stage); if (!next) throw new Error('This repair has already been collected.'); if (next === 'Claimed' && payload.collection_verified !== true) throw new Error('Confirm that the recipient was verified and the device was handed over.'); row.stage = next; title = next; if (next === 'Ready for Pickup') { row.ready_at = now; const due = row.revised_due || row.original_due; if (due && due < shopDay()) row.ever_delayed = true; } if (next === 'Claimed') row.claimed_at = now; }
   else if (action === 'delay') {
     if (!payload.reason || !payload.date || String(payload.date) < shopDay()) throw new Error('Add a reason and a revised date of today or later.');
     if (['Ready for Pickup', 'Claimed'].includes(row.stage)) throw new Error('This repair is already finished.');

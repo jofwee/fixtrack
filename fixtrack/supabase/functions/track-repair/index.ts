@@ -1,8 +1,8 @@
 import { body, hash, preflight, reply, serverClient } from '../_shared/http.ts';
 Deno.serve(async req => {
   const early = preflight(req); if (early) return early;
-  const db = serverClient();
   try {
+    const db = serverClient();
     const input = await body(req);
     if (typeof input.reference !== 'string' || typeof input.code !== 'string' || !/^FX-\d{1,15}$/i.test(input.reference.trim()) || !/^[a-f0-9\s-]{24,60}$/i.test(input.code)) return reply(req, { error: 'No matching repair found. Check your reference and private code.' }, 404);
     const reference = input.reference.trim().toUpperCase();

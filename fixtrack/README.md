@@ -2,6 +2,8 @@
 
 A fresh green repair workspace built with **Vite, React, TypeScript, and Supabase**. The original `../repairflow/` project is untouched.
 
+**Current defense setup: Vercel + Supabase Cloud.** Follow [CLOUD_SETUP.md](CLOUD_SETUP.md) for the exact environment fields, cloud deployment, real test accounts, and verification. This route does not need Docker or LAN sharing. The local-stack instructions below remain an optional development path.
+
 ## Open the local preview
 
 From this directory:
@@ -13,7 +15,7 @@ npm.cmd run dev
 
 Open **http://127.0.0.1:5173**. Node 22.12+ or a compatible newer release is required.
 
-With no Supabase environment values configured, the app explicitly runs in **sample-data preview mode**. It has no real accounts, uses browser local storage, and must only contain fictional information. This lets you review the design and complete workflow without Docker. There is no secret demo admin password.
+With both Supabase browser values empty, the development server runs in **sample-data preview mode**. It has no real accounts, uses browser local storage, and must only contain fictional information. Partial configuration and deployed builds never open the sample workspace: they show a setup screen until the Supabase settings are valid. There is no secret demo admin password.
 
 For customer tracking, open `/track`, choose **Try a sample repair**, or enter `FX-1048` and `GREEN-2026`. New preview repairs receive their own generated code. Settings lets you reset preview edits.
 
@@ -42,7 +44,7 @@ For customer tracking, open `/track`, choose **Try a sample repair**, or enter `
    npm.cmd run db:migrate
    ```
 
-3. Copy `.env.example` to `.env.local`. Run `npx.cmd supabase status` and enter the local API URL and publishable key (or legacy anon key) in `VITE_SUPABASE_URL` and `VITE_SUPABASE_PUBLISHABLE_KEY`. For the owner setup script, also put the local **service-role key** in `SUPABASE_SERVICE_ROLE_KEY`. Never put that privileged key in a `VITE_` variable or commit it.
+3. Copy `.env.example` to `.env.local`. Run `npx.cmd supabase status` and enter the local API URL and publishable key (or legacy anon key) in `VITE_SUPABASE_URL` and `VITE_SUPABASE_PUBLISHABLE_KEY`. Set `APP_URL=http://127.0.0.1:5173`. For owner provisioning, also set the local server secret key in `SUPABASE_SECRET_KEY`, or the legacy service-role key in `SUPABASE_SERVICE_ROLE_KEY`. Never put privileged values in `VITE_` variables or commit them.
 4. Copy `supabase/.env.local.example` to `supabase/.env.local`. In another terminal run:
 
    ```powershell
@@ -76,13 +78,13 @@ Customer tracking sends a reference and code in a POST body to `track-repair`. T
 npm.cmd test
 npm.cmd run check:functions
 npm.cmd run build
-# With the Vite server running and Google Chrome installed:
+# With Google Chrome installed (isolated test servers start automatically):
 npm.cmd run test:browser
 ```
 
 Database tests use **PGlite, a local PostgreSQL engine**, to execute the migration and check RLS, transactional changes, private response fields, tracking-code replacement, request limits, deactivation, MFA assurance, and collection. Tests stub the Supabase Auth schema and pgcrypto interface. They do not replace testing against actual Supabase Auth, pgcrypto, Mailpit, or the Deno Edge Runtime.
 
-Browser checks cover desktop/mobile navigation, search/filtering, intake, persistence, status updates, schedule revision, invalid/valid customer tracking, information exposure, and collection. Browser runs use isolated contexts with fictional data. Screenshots and failure traces go in ignored `qa/` and `test-results/` directories.
+Browser checks cover desktop/mobile navigation, search/filtering, intake, persistence, status updates, schedule revision, invalid/valid customer tracking, information exposure, and collection. Connected-login contract tests use mock Supabase responses for login, refresh, protected routing, and logout. Tests start isolated servers with their own fake/empty environment values; they never use your actual project keys. Screenshots and failure traces go in ignored `qa/` and `test-results/` directories.
 
 ## Before using real customer data
 
