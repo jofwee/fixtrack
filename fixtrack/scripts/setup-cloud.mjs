@@ -17,7 +17,8 @@ async function cli(args) {
 async function management(path, options = {}) {
   const response = await fetch(`https://api.supabase.com/v1/projects/${config.ref}/${path}`, { ...options, signal: AbortSignal.timeout(30000), headers: { Authorization: `Bearer ${config.token}`, 'Content-Type': 'application/json' } });
   if (!response.ok) throw new Error(`Supabase management request failed (HTTP ${response.status}). Check token scopes and project permissions.`);
-  return response.status === 204 ? null : response.json();
+  const body = await response.text();
+  return body.trim() ? JSON.parse(body) : null;
 }
 console.log(`Preparing Supabase project ${config.ref} for ${config.appUrl}.`);
 await cli(['link', '--project-ref', config.ref]);

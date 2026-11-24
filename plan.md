@@ -1,6 +1,6 @@
 # FixTrack website rebuild plan
 
-Prepared for review on November 24, 2026. Implementation is in `fixtrack/`, using **Vite + React + Supabase and a green theme**. Your latest direction is **Vercel preview + Supabase Cloud**, superseding the supplied final brief's localhost/LAN-only setup. The cloud path does not require Docker. Deployment configuration, cloud setup scripts, defense-account provisioning, and live verification are prepared; applying them to the actual project awaits the remaining `.env.local` values and Vercel domain. See `fixtrack/CLOUD_SETUP.md` for the current setup path.
+Prepared for review on November 24, 2026. Implementation is in `fixtrack/`, using **Vite + React + Supabase and a green theme**. The site is live at **https://fixtrack-uphsd.vercel.app/** with Supabase Cloud, superseding the supplied final brief's localhost/LAN-only setup. Database migrations, Auth settings, Edge Functions, and demo accounts are configured. The live repair workflow passed API and deployed browser checks, including separate-session customer tracking and a mobile layout check. Physical device checks at the venue remain manual. See `fixtrack/CLOUD_SETUP.md` for setup details; passwords and private codes stay in ignored local files.
 
 ## 1. What this website is for
 

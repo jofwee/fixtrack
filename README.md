@@ -2,6 +2,8 @@
 
 A green repair-management website for electronics repair shops, built with **Vite, React, TypeScript, and Supabase**.
 
+**Live preview:** [fixtrack-uphsd.vercel.app](https://fixtrack-uphsd.vercel.app/). The deployed frontend is connected to Supabase Cloud. Login passwords and private tracking credentials are kept out of this repository.
+
 Staff can check in devices, manage repair stages, record estimates and delays, and confirm collection. Customers get a separate private tracking page.
 
 ## Run the sample workspace

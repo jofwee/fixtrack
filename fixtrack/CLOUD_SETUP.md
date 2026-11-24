@@ -2,6 +2,10 @@
 
 This is the setup path for the defense. The frontend runs on Vercel; accounts, records, access rules, and Edge Functions run on Supabase Cloud. Docker and school LAN sharing are not required for this path. The existing green interface is retained.
 
+**Current deployment:** [fixtrack-uphsd.vercel.app](https://fixtrack-uphsd.vercel.app/), configured and verified on November 24, 2026. Database migrations, Auth settings, exact origins, and both Edge Functions are deployed. Real demo admin/staff accounts were created. The cloud API checks and deployed browser workflow passed, including separate-session tracking and a mobile layout check. Physical phone/laptop testing at the venue remains a manual check.
+
+The private, readable login sheet is `defense-logins.local.txt`; machine-readable account and verification files remain in `defense-accounts.local.txt` and `defense-check.local.txt`. All are ignored by Git and are not part of the public repository. The steps below document how to repeat the setup for a new project.
+
 ## Fill the local environment file
 
 An ignored `fixtrack/.env.local` template has been created. The project URL is already filled in locally. Add the remaining values there, never in source code or a public commit.
