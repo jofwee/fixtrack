@@ -19,7 +19,7 @@ try {
   unwrap(await staff.auth.signInWithPassword(accounts.staff), 'Staff login');
   unwrap(await secondDevice.auth.signInWithPassword(accounts.admin), 'Admin login on another session');
   assert.ok((await anonymous.from('repairs').select('id')).error, 'Anonymous users must not read repairs.');
-  const intake = { request_id: crypto.randomUUID(), customer_name: 'Defense Test Customer', customer_phone: '0917 555 0199', customer_email: '', device_type: 'Laptop', device: 'Defense sample laptop', issue: 'INTERNAL-DEFENSE-TEST-NOTE', public_summary: 'Battery service', original_due: date(2) };
+  const intake = { request_id: crypto.randomUUID(), customer_name: 'Miguel Santos', customer_phone: '0917 555 0199', customer_email: '', device_type: 'Laptop', device: 'Lenovo IdeaPad 3', issue: 'Battery drains quickly and no longer holds a charge.', public_summary: 'Battery service', original_due: date(2) };
   const issued = unwrap(await staff.rpc('create_repair', { p_shop_id: accounts.shop_id, p_input: intake }), 'Repair intake');
   const load = async (using = staff) => unwrap(await using.from('repair_workspace').select('*').eq('id', issued.id).single(), 'Read saved repair');
   let row = await load(secondDevice); assert.equal(row.stage, 'Received'); assert.equal(row.received_at.slice(0, 10), now.toISOString().slice(0, 10));
@@ -27,7 +27,7 @@ try {
   assert.ok((await staff.rpc('lookup_tracking', { p_reference: issued.reference, p_code: issued.tracking_code })).error, 'Staff/browser callers cannot bypass the tracking Edge Function.');
   let publicResult = await tracking(issued.reference, issued.tracking_code); assert.equal(publicResult.status, 200); assert.equal(publicResult.body.stage, 'Received');
   for (const forbidden of ['customer_name', 'customer_phone', 'issue', 'actor_name']) assert.equal(publicResult.body[forbidden], undefined);
-  assert.ok(!JSON.stringify(publicResult.body).includes('INTERNAL-DEFENSE-TEST-NOTE'));
+  assert.ok(!JSON.stringify(publicResult.body).includes(intake.issue));
   assert.equal((await tracking(issued.reference, '0000-0000-0000-0000-0000-0000')).status, 404);
   const change = async (action, payload = {}) => { row = await load(); unwrap(await staff.rpc('change_repair', { p_id: issued.id, p_version: row.version, p_action: action, p_payload: payload }), 'Repair update'); };
   await change('advance'); await change('advance');
@@ -39,7 +39,7 @@ try {
   publicResult = await tracking(issued.reference, issued.tracking_code); assert.equal(publicResult.body.stage, 'Claimed');
   assert.ok(unwrap(await secondDevice.from('repair_workspace').select('id').eq('stage', 'Claimed').eq('id', issued.id), 'Repair history').length);
   // Leave a second active, fictional job so panelists can test tracking themselves.
-  const active = unwrap(await staff.rpc('create_repair', { p_shop_id: accounts.shop_id, p_input: { ...intake, request_id: crypto.randomUUID(), customer_id: row.customer_id, device: 'Defense sample phone', device_type: 'Phone', public_summary: 'Charging port diagnosis', original_due: '' } }), 'Second repair intake');
+  const active = unwrap(await staff.rpc('create_repair', { p_shop_id: accounts.shop_id, p_input: { ...intake, request_id: crypto.randomUUID(), customer_id: row.customer_id, device: 'Samsung Galaxy A55', device_type: 'Phone', issue: 'Charging connection is intermittent.', public_summary: 'Charging port diagnosis', original_due: '' } }), 'Second repair intake');
   assert.notEqual(active.reference, issued.reference);
   const backup = { checked_at: new Date().toISOString(), site_url: config.appUrl, completed: issued, active, saved_record: row };
   writeFileSync('defense-check.local.txt', JSON.stringify(backup, null, 2) + '\n', { mode: 0o600 });

@@ -24,13 +24,13 @@ try {
   const { data: owner, error: ownerError } = await db.auth.admin.createUser({ email: accounts.admin.email, password: accounts.admin.password, email_confirm: true });
   if (ownerError || !owner.user) throw new Error('Unable to create the owner account.');
   accounts.admin.id = owner.user.id; save();
-  const { data: shopId, error: shopError } = await db.rpc('provision_owner', { p_user_id: owner.user.id, p_name: 'Defense Admin', p_shop_name: 'FixTrack Demo Shop', p_phone: '0917 555 0100', p_address: 'Las Piñas City, Metro Manila' });
+  const { data: shopId, error: shopError } = await db.rpc('provision_owner', { p_user_id: owner.user.id, p_name: 'Admin', p_shop_name: 'CPE Electronic Repair Shop', p_phone: '0917 555 0100', p_address: 'Las Piñas City, Metro Manila' });
   if (shopError) { await db.auth.admin.deleteUser(owner.user.id); accounts.admin.id = null; save(); throw new Error('Unable to provision the shop. Apply database migrations first.'); }
   accounts.shop_id = shopId; save();
   const { data: staff, error: staffError } = await db.auth.admin.createUser({ email: accounts.staff.email, password: accounts.staff.password, email_confirm: true });
   if (staffError || !staff.user) throw new Error('Owner is ready, but staff creation failed. The saved credential file records the completed steps.');
   accounts.staff.id = staff.user.id; save();
-  const { error: membershipError } = await db.rpc('record_staff_invite', { p_actor: owner.user.id, p_shop_id: shopId, p_user_id: staff.user.id, p_name: 'Defense Staff' });
+  const { error: membershipError } = await db.rpc('record_staff_invite', { p_actor: owner.user.id, p_shop_id: shopId, p_user_id: staff.user.id, p_name: 'Staff' });
   if (membershipError) { await db.auth.admin.deleteUser(staff.user.id); accounts.staff.id = null; save(); throw new Error('Owner is ready, but staff access could not be assigned.'); }
   accounts.state = 'ready'; save();
   console.log('Real Supabase admin and staff accounts are ready. Their generated passwords are saved only in ignored defense-accounts.local.txt. Do not upload that file.');

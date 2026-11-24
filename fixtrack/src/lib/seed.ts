@@ -1,6 +1,6 @@
 import { dayOffset } from './domain';
 import type { Customer, Repair, Stage } from './domain';
-export const DEMO_SHOP = { id: 'preview-shop', name: 'Evergreen Electronics', phone: '0917 555 0100', address: 'Las Piñas City, Metro Manila' };
+export const DEMO_SHOP = { id: 'preview-shop', name: 'CPE Electronic Repair Shop', phone: '0917 555 0100', address: 'Las Piñas City, Metro Manila' };
 const rows: [string, string, string, string, string, Stage, number][] = [
   ['Maria Santos', 'Laptop', 'MacBook Air M2', 'Battery replacement', 'Battery service and testing', 'Repairing', 1],
   ['Gabriel Cruz', 'Phone', 'iPhone 13', 'Cracked display', 'Display replacement', 'Ready for Pickup', 0],
