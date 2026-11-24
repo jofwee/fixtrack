@@ -81,3 +81,12 @@ export async function track(reference: string, code: string): Promise<TrackingRe
   return { reference: r.reference, device: r.device, public_summary: r.public_summary, stage: r.stage, original_due: r.original_due, revised_due: r.revised_due, ever_delayed: r.ever_delayed, delay_reason: r.delay_reason, ready_at: r.ready_at, claimed_at: r.claimed_at, updated_at: r.updated_at, shop_name: data.shop.name, shop_phone: data.shop.phone, events: r.events.filter(e => e.customer_visible).map(({ id, title, detail, created_at }) => ({ id, title, detail, created_at })) };
 }
 export function resetPreview() { localStorage.removeItem(STORAGE_KEY); }
+export async function removeNote(repair: Repair, eventId: string) {
+  if (supabase) { check(await supabase.rpc('remove_repair_note', { p_repair_id: repair.id, p_event_id: eventId, p_version: repair.version })); return; }
+  const data = localData();
+  const row = data.repairs.find(r => r.id === repair.id);
+  if (!row || row.version !== repair.version) throw new Error('This repair has changed. Refresh and try again.');
+  const event = row.events.find(e => e.id === eventId);
+  if (!event || event.kind !== 'note') throw new Error('Only notes can be removed.');
+  row.events = row.events.filter(e => e.id !== eventId); row.version++; row.updated_at = new Date().toISOString(); save(data);
+}

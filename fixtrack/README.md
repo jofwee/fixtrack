@@ -27,6 +27,7 @@ For customer tracking, open `/track`, choose **Try a sample repair**, or enter `
 - Persistent preview data; a separate Supabase adapter with no silent fallback when a configured backend fails.
 - Repair stages, activity history, internal/customer-visible updates, original/revised estimates, delay explanations, and collection confirmation.
 - Customers, collected repair history, saved shop settings, and code replacement.
+- Admin-only note removal with a confirmation dialog. Staff cannot remove notes; status and schedule events cannot be removed. Removed notes are retained in a private administrative audit table and disappear from staff/customer timelines.
 - Supabase sign-in, invitation/password setup, password recovery, TOTP enrollment/challenge, staff invitations, and access deactivation.
 - Private tracking Edge Function with a limited response and shared database rate limits.
 - SQL schema, RLS policies, protected transactional RPCs, unique references, duplicate-intake protection, version checks, and audited changes.
